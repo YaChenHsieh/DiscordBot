@@ -1,0 +1,20 @@
+# Python-related files
+__pycache__/
+*.pyc
+*.pyo
+
+# Pytest cache
+.pytest_cache/
+
+# Environment variable files
+.env
+
+# API credential files
+credentials.json
+token.json
+
+# VSCode settings
+.vscode/
+
+# Virtual environment
+venv/
