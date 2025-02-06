@@ -5,6 +5,17 @@ import discord
 from discord.ext import commands, tasks
 from youtube_scraper import YouTubeScraper
 from get_google_sheets import GoogleSheetsService
+import logging
+
+# Configure logging (Place it here, before any function definitions)
+logging.basicConfig(
+    level=logging.INFO,  # Set log level (DEBUG for detailed logs)
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[
+        logging.StreamHandler(),  # Logs to console (visible in GitHub Actions)
+        logging.FileHandler("bot.log")  # Saves logs to a file
+    ]
+)
 
 # load env 
 load_dotenv()
@@ -26,11 +37,11 @@ sheets_service = GoogleSheetsService()
 # activate Bot
 @bot.event
 async def on_ready():
-    print(f'{bot.user} is running！')  # Bot running
-    print(f'# Numbers of Server: {len(bot.guilds)}')  # guilds = discord server
+    logging.info(f"{bot.user} is running!")
+    logging.info(f"Number of Servers: {len(bot.guilds)}")
     checkin_link.start()  # Send the checkin link 
     fetch_youtube_updates.start()  # Start the task to fetch YouTube updates
-    # fetch_sheet_updates.start() # Start the task to fetch sheet updates
+    fetch_sheet_updates.start() # Start the task to fetch sheet updates
 
 
 # Task1: send checkin link every hour
@@ -48,13 +59,15 @@ async def checkin_link():
 # Task2: Fetch and send YouTube updates every hour
 @tasks.loop(hours=1)
 async def fetch_youtube_updates():
+    logging.info("Fetching latest YouTube videos...")
 
     # Read channels from yt_list
     try:
         with open(yt_list, "r") as file:
             yt_channels = [line.strip() for line in file.readlines() if line.strip()]
+            logging.info(f"Loaded {len(yt_channels)} YouTube channels.")
     except FileNotFoundError:
-        print("Error: channels.txt file not found.")
+        logging.error("Error: youtube_list.txt file not found.")
         return
 
     # Fetch and send updates for each channel
@@ -91,10 +104,11 @@ async def fetch_youtube_updates():
 # Task 2: Fetch Google Sheets updates every hour
 @tasks.loop(seconds=1)
 async def fetch_sheet_updates():
+    logging.info("Fetching updates from Google Sheets...")
 
     channel = bot.get_channel(CHANNEL_ID)
     if not channel:
-        print("Invalid Discord channel ID.")
+        logging.error("Invalid Discord channel ID. Calling from fetch_sheet_updates.")
         return
     # Fetch data from Google Sheets
     try:
@@ -103,11 +117,11 @@ async def fetch_sheet_updates():
             for row in data:
                 message = " | ".join(row)  # Format the row as a string
                 await channel.send(message)
-                print("Google Sheets updated on discord.")
+                logging.info(f"Sent Google Sheets update: {message}")
         else:
-            print("No data found in Google Sheets.")
+            logging.warning("No data found in Google Sheets.")
     except Exception as e:
-        print(f"Error fetching data from Google Sheets: {e}")
+        logging.exception(f"Error fetching data from Google Sheets: {e}")
 
 
 ## command test
