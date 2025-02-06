@@ -116,3 +116,74 @@ This guide ensures a smooth handoff for future collaborators. They only need to:
 Currently developing on local, hence using OAuth 2.0 credentials. 
 Might need to change the auth process if decided to launch the service on cloud. Such as, Workload Identity Pool 
 
+
+### **Where to Add the Installation & Setup Process?**
+You should **add the "Full Installation & Setup Process" right after the "Python Environment Setup" section**.  
+This will ensure that users have installed dependencies before proceeding with the next steps.
+
+---
+
+### **Modified README with Installation & Setup Process in English**
+#### **New Section: "Full Installation & Setup Process"**
+(Insert this section **after "Python Environment Setup"** and before "Google API Setup")
+
+---
+
+## **Full Installation & Setup Process**
+Follow these steps to properly set up and run the bot on your local machine.
+
+### **1. Clone the Repository**
+   ```bash
+   git clone https://github.com/your-repo-name.git
+   cd your-repo-name
+   ```
+
+### **2. Create a Virtual Environment**
+   ```bash
+   python -m venv myenv
+   source myenv/bin/activate  # macOS/Linux
+   myenv\Scripts\activate  # Windows
+   ```
+
+### **3. Install Dependencies**
+   ```bash
+   pip install -r requirements.txt
+   ```
+
+### **4. Add provided `.env` to the folder**  
+   - Ensure the provided `.env` file is placed in the project root directory.
+   - It should contain the following variables:
+     ```ini
+     DISCORD_TOKEN=your-discord-bot-token
+     GOOGLE_APPLICATION_CREDENTIALS=credentials.json
+     DISCORD_TOKEN=your-discord-bot-token
+     DISCORD_SERVER_ID=your-discord-server-id
+     DISCORD_CHANNEL_ID=your-discord-channel-id
+     CREDENTIALS_FILE=credentials.json
+     TOKEN_FILE=token.json
+     SPREADSHEET_ID=your-google-sheets-id
+     RANGE_NAME=Sheet-number!A1:B6
+     ```
+   - Ensure the `credentials.json` file is also in the root directory.
+
+   - 📂 **Project Structure**
+   ```
+   /your-project
+   ├── main.py
+   ├── .env <-- Include this file
+   ├── requirements.txt
+   ├── README.md
+   ├── credentials.json
+   ```
+
+### **5. Run the Bot**
+   ```bash
+   python main.py
+   ```
+
+### **6. Verify the Bot is Running**
+   - Open Discord and test the bot with a command (e.g., `/ping`).
+   - Check the terminal for the output:  
+     ```
+     BOT is running！
+     ```

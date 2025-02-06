@@ -1,0 +1,67 @@
+# Workflow -> Job -> Step -> Action
+name: Discord Bot CI/CD
+
+# trigger 
+on:
+  push:
+    branches:
+      - main  # Trigger the workflow when code is pushed to the main branch
+      - dev
+
+jobs:
+  # 1st Job in parallel
+  test:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    steps:
+      - name: Checkout code 
+        uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"  # Set Python version
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt  # Install dependencies
+      
+      - name: Run tests
+        run: pytest -v  # Execute tests with verbose output
+      
+  # 2nd Job in parallel
+  run:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+    needs: test  # Only run if the 'test' job passes !!!
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4  # Pull latest code
+      
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.12"  # Ensure the correct Python version
+      
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt  # Install dependencies
+
+      - name: Create .env file
+        run: |
+          echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" >> .env
+          echo "DISCORD_SERVER_ID=${{ secrets.DISCORD_SERVER_ID }}" >> .env
+          echo "DISCORD_CHANNEL_ID=${{ secrets.DISCORD_CHANNEL_ID }}" >> .env
+          echo "SPREADSHEET_ID=${{ secrets.SPREADSHEET_ID }}" >> .env
+          echo "RANGE_NAME=${{ secrets.RANGE_NAME }}" >> .env
+          echo "CREDENTIALS_FILE=credentials.json" >> .env
+          echo "TOKEN_FILE=token.json" >> .env
+
+      - name: Set up Google credentials and token
+        run: |
+          echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
+          echo '${{ secrets.GOOGLE_TOKEN }}' > token.json
+
+      - name: Start Discord bot (for 30 seconds)
+        run: |
+          python main.py &  # Start the bot in the background
+          sleep 30  # Wait for 30 seconds to simulate bot running
+          pkill -f main.py  # Kill the bot process after 30 seconds
