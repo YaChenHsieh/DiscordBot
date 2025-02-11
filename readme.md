@@ -187,3 +187,34 @@ Follow these steps to properly set up and run the bot on your local machine.
      ```
      BOT is running！
      ```
+
+## **Github Action to Ec2 Setup Process**
+Follow these steps to properly set up github action and EC2.
+
+### **1. create pair keys**
+   - Local or EC2 env -> create rsa key pair (private: id_rsa and public: id_rsa.pub)
+
+### **2. setup private key in GitHub Secrets**
+   - Bot Repository -> Settings -> Secrets and variables -> Actions -> create a Secret (eg. EC2_SSH_KEY)
+   - add content of id_rsa to EC2_KEY
+
+### **2. setup public key in EC2**
+   - add id_rsa.pub content to EC2 (~/.ssh/authorized_keys)
+
+### **2. setup credential content in GitHub Secrets**
+   - It should contain the following variables:
+     ```ini
+     DISCORD_SERVER_ID=your-discord-server-id
+     DISCORD_CHANNEL_ID=your-discord-channel-id
+     DISCORD_TOKEN=your-discord-bot-token
+     EC2_HOST=EC2-public-IP（eg. 1.11.22.128）
+     EC2_USER=EC2-user-name（eg. ken）
+     EC2_SSH_KEY=EC2-private-key (eg. id_rsa)
+     EC2_PROJECT_PATH=project-path-in-EC2 (eg. /home/ken/Bot)
+     GOOGLE_CREDENTIALS=content-of-credentials.json
+     GOOGLE_TOKEN=content-of-token.json
+     SPREADSHEET_ID=your-google-sheets-id
+     RANGE_NAME=Sheet-number!A1:B6
+     ```
+
+### **3. github action triggered when pushing to dev branch**

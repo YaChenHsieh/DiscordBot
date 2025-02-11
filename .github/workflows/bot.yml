@@ -76,8 +76,10 @@ jobs:
             pip install -r requirements.txt
             
             echo "Running program for 30 seconds..."
-            timeout 30s python3 main.py
+            nohup python main.py > bot.log 2>&1 &  # NoHangUp means when SSH hang, machine still run ||  2>&1 means stderr2 direct to stdout 1
+            sleep 30
+            pkill -f main.py  
             
             echo "Deployment completed!"
           EOF
-          # timeout 30s -> nohup python3 main.py & sleep 30 && pkill -f main.py
+
