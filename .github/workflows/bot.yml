@@ -5,7 +5,7 @@ name: Discord Bot CI/CD
 on:
   push:
     branches:
-      - main  # Trigger the workflow when code is pushed to the main branch
+      # - main  # Trigger the workflow when code is pushed to the main branch
       - dev
 
 jobs:
@@ -29,22 +29,10 @@ jobs:
         run: pytest -v  # Execute tests with verbose output
       
   # 2nd Job in parallel
-  run:
-    runs-on: ubuntu-latest # Use the latest Ubuntu runner
+  deploy_ec2:
+    runs-on: ubuntu-latest # Use the latest Ubuntu runner to run the below instuctions
     needs: test  # Only run if the 'test' job passes !!!
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4  # Pull latest code
-      
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: "3.12"  # Ensure the correct Python version
-      
-      - name: Install dependencies
-        run: |
-          pip install -r requirements.txt  # Install dependencies
-
       - name: Create .env file
         run: |
           echo "DISCORD_TOKEN=${{ secrets.DISCORD_TOKEN }}" >> .env
@@ -59,9 +47,36 @@ jobs:
         run: |
           echo '${{ secrets.GOOGLE_CREDENTIALS }}' > credentials.json
           echo '${{ secrets.GOOGLE_TOKEN }}' > token.json
-
-      - name: Start Discord bot (for 30 seconds)
+      
+      - name: Setup SSH Key
         run: |
-          python main.py &  # Start the bot in the background
-          sleep 30  # Wait for 30 seconds to simulate bot running
-          pkill -f main.py  # Kill the bot process after 30 seconds
+          mkdir -p ~/.ssh/
+          echo "${{ secrets.EC2_SSH_KEY }}" > ~/.ssh/id_rsa_github
+          chmod 600 ~/.ssh/id_rsa_github
+          ssh-keyscan -H ${{ secrets.EC2_HOST }} >> ~/.ssh/known_hosts # Scan the pub key from Ec2 and put in knownhosts
+      
+      - name: Upload .env & credentials to EC2
+        run: |
+          scp -i ~/.ssh/id_rsa_github .env ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PROJECT_PATH }}/
+          scp -i ~/.ssh/id_rsa_github credentials.json ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PROJECT_PATH }}/
+          scp -i ~/.ssh/id_rsa_github token.json ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }}:${{ secrets.EC2_PROJECT_PATH }}/
+
+      - name: Deploy to EC2 (for 30 seconds)
+        run: |
+          ssh -i ~/.ssh/id_rsa ${{ secrets.EC2_USER }}@${{ secrets.EC2_HOST }} << 'EOF'
+            set -e
+            echo "Starting deployment on EC2..."
+            
+            cd ${{ secrets.EC2_PROJECT_PATH }}
+            git pull origin dev  # pull the code 
+            
+            # enable Python env and install
+            source myenv/bin/activate
+            pip install -r requirements.txt
+            
+            echo "Running program for 30 seconds..."
+            timeout 30s python3 main.py
+            
+            echo "Deployment completed!"
+          EOF
+          # timeout 30s -> nohup python3 main.py & sleep 30 && pkill -f main.py
