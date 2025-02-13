@@ -6,6 +6,7 @@ from discord.ext import commands, tasks
 from youtube_scraper import YouTubeScraper
 from get_google_sheets import GoogleSheetsService
 import logging
+import asyncio
 
 # Configure logging (Place it here, before any function definitions)
 logging.basicConfig(
@@ -33,6 +34,9 @@ bot = commands.Bot(command_prefix="!", intents=intents)
 
 # init google sheet service
 sheets_service = GoogleSheetsService()
+
+# lock to control multi threads
+message_lock = asyncio.Lock()
 
 # activate Bot
 @bot.event
@@ -69,36 +73,39 @@ async def fetch_youtube_updates():
     except FileNotFoundError:
         logging.error("Error: youtube_list.txt file not found.")
         return
+    
+    # lock control
+    async with message_lock:
 
-    # Fetch and send updates for each channel
-    channel = bot.get_channel(CHANNEL_ID)
-    if not channel:
-        print("Invalid Discord channel ID. Please check the configuration.")
-        return
+        # Fetch and send updates for each channel
+        channel = bot.get_channel(CHANNEL_ID)
+        if not channel:
+            print("Invalid Discord channel ID. Please check the configuration.")
+            return
 
-    for yt_channel_url in yt_channels:
-        scraper = YouTubeScraper(yt_channel_url)  # Initialize the scraper for the channel
-        scraper.fetch_html()  # Fetch HTML content
-        latest_video = scraper.get_latest_video_info()  # Get latest video info
+        for yt_channel_url in yt_channels:
+            scraper = YouTubeScraper(yt_channel_url)  # Initialize the scraper for the channel
+            scraper.fetch_html()  # Fetch HTML content
+            latest_video = scraper.get_latest_video_info()  # Get latest video info
 
-        # if latest_video:
-        #     await channel.send(f"New video from {latest_video['author']}:\n{latest_video['title']}\n{latest_video['url']}")
-        #     print(f"Sent update for {yt_channel_url}")
-        if latest_video:
-            # Create an embed message
-            embed = discord.Embed(
-                title=f"{latest_video['author']}'s New Video 🎥",  # Title
-                description=f"{latest_video['title']}\n\n[Watch Now!]({latest_video['url']})",  # Description
-                color=discord.Color.blue()  # Color
-                )
-            embed.add_field(name="Uploaded", value=latest_video['time_ago'], inline=True)
-            embed.set_footer(text="YouTube Updates by SquarieBot")  # Footer for branding
-            
-            # Send the embed message
-            await channel.send(embed=embed)
-            print(f"Sent update for {yt_channel_url}")
-        else:
-            print(f"Failed to fetch video info for {yt_channel_url}")
+            # if latest_video:
+            #     await channel.send(f"New video from {latest_video['author']}:\n{latest_video['title']}\n{latest_video['url']}")
+            #     print(f"Sent update for {yt_channel_url}")
+            if latest_video:
+                # Create an embed message
+                embed = discord.Embed(
+                    title=f"{latest_video['author']}'s New Video 🎥",  # Title
+                    description=f"{latest_video['title']}\n\n[Watch Now!]({latest_video['url']})",  # Description
+                    color=discord.Color.blue()  # Color
+                    )
+                embed.add_field(name="Uploaded", value=latest_video['time_ago'], inline=True)
+                embed.set_footer(text="YouTube Updates by SquarieBot")  # Footer for branding
+                
+                # Send the embed message
+                await channel.send(embed=embed)
+                print(f"Sent update for {yt_channel_url}")
+            else:
+                print(f"Failed to fetch video info for {yt_channel_url}")
 
 
 # Task 2: Fetch Google Sheets updates every hour
@@ -111,25 +118,28 @@ async def fetch_sheet_updates():
         logging.error("Invalid Discord channel ID. Calling from fetch_sheet_updates.")
         return
     
-    # Push image
-    img = discord.File("./img/donation.jpg", filename="donation.jpg")
-    embed = discord.Embed(title="Donation")
-    embed.set_image(url="attachment://donation.jpg")  # attachment: recognize by discord. Online img, use the real URL
-    await channel.send(embed=embed, file=img)  # send img
+    # lock control
+    async with message_lock:
+    
+        # Push image
+        img = discord.File("./img/donation.jpg", filename="donation.jpg")
+        embed = discord.Embed(title="Donation")
+        embed.set_image(url="attachment://donation.jpg")  # attachment: recognize by discord. Online img, use the real URL
+        await channel.send(embed=embed, file=img)  # send img
 
 
-    # Fetch data from Google Sheets
-    try:
-        data = sheets_service.read_sheets()
-        if data:
-            for row in data:
-                message = " | ".join(row)  # Format the row as a string
-                await channel.send(message)
-                logging.info(f"Sent Google Sheets update: {message}")
-        else:
-            logging.warning("No data found in Google Sheets.")
-    except Exception as e:
-        logging.exception(f"Error fetching data from Google Sheets: {e}")
+        # Fetch data from Google Sheets
+        try:
+            data = sheets_service.read_sheets()
+            if data:
+                for row in data:
+                    message = " | ".join(row)  # Format the row as a string
+                    await channel.send(message)
+                    logging.info(f"Sent Google Sheets update: {message}")
+            else:
+                logging.warning("No data found in Google Sheets.")
+        except Exception as e:
+            logging.exception(f"Error fetching data from Google Sheets: {e}")
 
 
 ## command test
