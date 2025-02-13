@@ -110,6 +110,14 @@ async def fetch_sheet_updates():
     if not channel:
         logging.error("Invalid Discord channel ID. Calling from fetch_sheet_updates.")
         return
+    
+    # Push image
+    img = discord.File("./img/donation.jpg", filename="donation.jpg")
+    embed = discord.Embed(title="Donation")
+    embed.set_image(url="attachment://donation.jpg")  # attachment: recognize by discord. Online img, use the real URL
+    await channel.send(embed=embed, file=img)  # send img
+
+
     # Fetch data from Google Sheets
     try:
         data = sheets_service.read_sheets()
