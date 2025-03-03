@@ -1,12 +1,12 @@
 import os
 from dotenv import load_dotenv
+import logging
+import asyncio
 
 import discord
 from discord.ext import commands, tasks
 from youtube_scraper import YouTubeScraper
 from get_google_sheets import GoogleSheetsService
-import logging
-import asyncio
 
 # Configure logging (Place it here, before any function definitions)
 logging.basicConfig(
@@ -126,7 +126,6 @@ async def fetch_sheet_updates():
         embed = discord.Embed(title="Donation")
         embed.set_image(url="attachment://donation.jpg")  # attachment: recognize by discord. Online img, use the real URL
         await channel.send(embed=embed, file=img)  # send img
-
 
         # Fetch data from Google Sheets
         try:
