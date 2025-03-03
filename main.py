@@ -19,10 +19,13 @@ logging.basicConfig(
 )
 
 # load env 
-load_dotenv()
+load_dotenv(override=True)
 TOKEN = os.getenv("DISCORD_TOKEN")  # from .env read Token
 CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))  # from .env read Channel ID
 RESUME_CHANNEL_ID = int(os.getenv("DISCORD_CHANNEL_ID"))  # from .env read Channel ID
+SHEETS_COL = [int(x.strip()) for x in os.getenv("SHEETS_COL").split(",") if x.strip().isdigit()]
+
+
 yt_list = "youtube_list.txt"
 
 # set Intents
@@ -109,7 +112,7 @@ async def fetch_youtube_updates():
 
 
 # Task 2: Fetch Google Sheets updates every hour
-@tasks.loop(seconds=1)
+@tasks.loop(hours=1)
 async def fetch_sheet_updates():
     logging.info("Fetching updates from Google Sheets...")
 
@@ -130,13 +133,15 @@ async def fetch_sheet_updates():
         # Fetch data from Google Sheets
         try:
             data = sheets_service.read_sheets()
-            if data:
-                for row in data:
+            filtered_data = sheets_service.filter_columns(data, SHEETS_COL)
+
+            for row in filtered_data:
+                if row:
                     message = " | ".join(row)  # Format the row as a string
                     await channel.send(message)
                     logging.info(f"Sent Google Sheets update: {message}")
-            else:
-                logging.warning("No data found in Google Sheets.")
+                else:
+                    logging.warning("No data found in Google Sheets.")
         except Exception as e:
             logging.exception(f"Error fetching data from Google Sheets: {e}")
 

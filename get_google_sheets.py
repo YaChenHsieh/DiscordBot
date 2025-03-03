@@ -28,7 +28,7 @@ SCOPES = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 # The ID and range of a sample spreadsheet.
 
 # Load the .env file
-load_dotenv()
+load_dotenv(override=True)
 SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
 RANGE_NAME = os.getenv("RANGE_NAME")
 
@@ -59,6 +59,8 @@ class GoogleSheetsService:
             # Call the Sheets API
             sheet = self.service.spreadsheets()
             result = sheet.values().get(spreadsheetId=self.spreadsheetId, range=self.range_name).execute()
+            print(f"spreadsheetId:{self.spreadsheetId}")
+            print(f"range:{self.range_name}")
             return result.get("values", [])
         except HttpError as err:
           print(f"HTTP Error: {err}")
@@ -66,13 +68,25 @@ class GoogleSheetsService:
         except Exception as e:
           print(f"An error occurred: {e}")
           return []
+        
+    def filter_columns(self, data, selected_columns):
+        """ get Google Sheets API selected column  """
+        filtered_data = []
+        for row in data:
+            # get selected column（A=0, F=5, I=8）
+            filtered_row = [row[i] if i < len(row) else "" for i in selected_columns]
+            filtered_data.append(filtered_row)
+        return filtered_data
 
 
 if __name__ == "__main__":
     sheets_service = GoogleSheetsService()
     data = sheets_service.read_sheets()
-    if data:
-        for row in data:
+    selected_columns = [0, 5, 8]
+    filtered_data = sheets_service.filter_columns(data, selected_columns)
+
+    for row in filtered_data:
+        if row: 
             print(row)
-    else:
-        print("No data found.")
+        else:
+            print("No data found.")

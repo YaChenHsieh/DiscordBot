@@ -6,7 +6,7 @@ from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 
 # Load the .env file
-load_dotenv()
+load_dotenv(override=True)
 
 # File paths for Google API credentials and token
 CREDENTIALS_FILE = os.getenv("GOOGLE_CREDENTIALS", "credentials.json")  # Path to client secret JSON
