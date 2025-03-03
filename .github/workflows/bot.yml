@@ -40,6 +40,7 @@ jobs:
           echo "DISCORD_CHANNEL_ID=${{ secrets.DISCORD_CHANNEL_ID }}" >> .env
           echo "SPREADSHEET_ID=${{ secrets.SPREADSHEET_ID }}" >> .env
           echo "RANGE_NAME=${{ secrets.RANGE_NAME }}" >> .env
+          echo "SHEETS_COL=${{ secrets.SHEETS_COL }}" >> .env
           echo "CREDENTIALS_FILE=credentials.json" >> .env
           echo "TOKEN_FILE=token.json" >> .env
 
@@ -75,7 +76,7 @@ jobs:
             source myenv/bin/activate
             pip install -r requirements.txt
             
-            echo "Running program for 30 seconds..."
+            echo "Running program for 20 seconds..."
             nohup python main.py > bot.log 2>&1 &  # NoHangUp means when SSH hang, machine still run ||  2>&1 means stderr2 direct to stdout 1
             sleep 20
             pkill -f main.py  
